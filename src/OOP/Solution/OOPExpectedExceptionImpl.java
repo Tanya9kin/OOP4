@@ -4,8 +4,13 @@ import OOP.Provided.OOPExpectedException;
 
 public class OOPExpectedExceptionImpl implements OOPExpectedException{
 
-    private Class<? extends Exception> exp_exception = null; //field for the expected exception
-    private String message = null;//field for the expected exception message
+    private Class<? extends Exception> exp_exception; //field for the expected exception
+    private String message;//field for the expected exception message
+
+    private OOPExpectedExceptionImpl(){
+        exp_exception = null;
+        message = null;
+    }
 
     @Override
     public Class<? extends Exception> getExpectedException() {

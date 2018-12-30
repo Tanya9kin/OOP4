@@ -4,10 +4,15 @@ import OOP.Provided.OOPResult;
 
 public class OOPResultImpl implements OOPResult {
 
-    //OOPTestResult result_type;
-    String message;
+    private OOPTestResult result_type;
+    private String message;
+
+    public OOPResultImpl(OOPTestResult new_result, String new_message){
+        result_type = new_result;
+        message = new_message;
+    }
     /*
-    implementation:
+    for later.....implementation:
     get the expected exceptions of the test class and the message for it
     check that it was
     SUCCESS -
@@ -34,9 +39,7 @@ public class OOPResultImpl implements OOPResult {
             * return the class of the exception (we expected or did not expect)
      */
     @Override
-    public OOPTestResult getResultType() {
-
-    }
+    public OOPTestResult getResultType() { return result_type; }
 
     @Override
     public String getMessage() {
@@ -46,6 +49,12 @@ public class OOPResultImpl implements OOPResult {
     //need to use getMessage() and getResultType() in this
     @Override
     public boolean equals(Object obj){
-
+        if(obj == null || !obj.getClass().equals(OOPResultImpl.class)){
+            return false;
+        }
+        OOPResultImpl real_obj = (OOPResultImpl)obj;
+        if(real_obj.getResultType() == result_type && real_obj.getMessage().equals(message)){
+            return true;
+        }
     };
 }
