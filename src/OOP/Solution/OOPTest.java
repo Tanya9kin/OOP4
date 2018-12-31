@@ -17,7 +17,7 @@ or only methods with this tag
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OOPTest{
-    int order();
+    int order() default 0;
     String tag() default "";
 }
 

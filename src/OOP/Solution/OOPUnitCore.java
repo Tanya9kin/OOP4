@@ -28,18 +28,39 @@ public class OOPUnitCore {
     }
 
     /*
-
+    LOGIC: BEWARE - shit is complicated and has lots of pitfalls
+        * Setup:
+            * make an unordered collection of all the OOPSetup methods of me and my daddys
+            * run them
+        * Test:
+            * (probably in another function for readability)
+            * make a collection for all the methods with annotation OOPTest
+            * map : for each method make collection of the OOPBefore (unordered)
+            *   these methods are taken from all the tests for me and my daddys
+            * map : for each method make collection of the OOPAfter (unordered)
+            * filter tests by tag (if tagFlag is True)
+            * order tests by order if OOPTestClassType is ORDERED
+            *       if some daddy is UNORDERED - order for them is 0 (default value)
+            * for each method:
+            *   run OOPBefore:
+            *
+            *   run method
+            *   run OOPAfter
+            *
      */
-    static OOPTestSummery runClass(Class<?> testClass){
 
+    //maybe write a function that gets all of the methods with annotation "***"
+    //if we need it ordered we can make it so on demand
+    static OOPTestSummery runClass(Class<?> testClass){
+        runClassAux(testClass,false,"");
     }
 
-    /*
-    if tag is null or testClass doesn't have OOPTestClass annotation on it:
-        throw IllegalArgumentException
-
-     */
     static OOPTestSummery runClass(Class<?> testClass, String tag){
+        runClassAux(testClass,true,tag);
+    }
+
+    //WRITE ONLY THIS ONE WITH THE WHOLE DAMN LOGIC
+    static OOPTestSummery runClassAux(Class<?> testClass, boolean tagFlag, String tag){
 
     }
 }
