@@ -41,11 +41,17 @@ public class OOPUnitCore {
             * filter tests by tag (if tagFlag is True)
             * order tests by order if OOPTestClassType is ORDERED
             *       if some daddy is UNORDERED - order for them is 0 (default value)
+            * Make an OOPTestSummery object.
             * for each method:
+            *   Backup the objects fields
             *   run OOPBefore:
             *
-            *   run method
-            *   run OOPAfter
+            *   run method:
+            *
+            *   run OOPAfter:
+            *
+            *
+            *  Add an entry to the summery with the name of the method and result
             *
      */
 
