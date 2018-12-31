@@ -1,5 +1,7 @@
 package OOP.Solution;
 
+import java.lang.annotation.Annotation;
+
 public class OOPUnitCore {
 
     /*
@@ -135,7 +137,7 @@ public class OOPUnitCore {
             *
      */
 
-    static getAnnotated(){
+    static getAnnotated(Annotation annot){
 
     }
 
