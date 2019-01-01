@@ -9,6 +9,11 @@ import java.util.stream.Collectors;
 
 public class OOPUnitCore {
     private Object boobs; //Bring Object Oriented brograming (arab) stuff
+    private List<Method> tests;
+    private List<Method> before;
+    private List<Method> after;
+    private Map<String,List<Method>> all_before;
+    private Map<String,List<Method>> all_after;
     /*
     #1 Q: why static?
     A:
@@ -216,6 +221,41 @@ public class OOPUnitCore {
             m.invoke(boobs);
         }
     }
+
+
+    private void getAllTests() throws IllegalAccessException,InvocationTargetException{
+      tests = new ArrayList<Method>();
+      before = new ArrayList<Method>();
+      after = new ArrayList<Method>();
+      all_before = new TreeMap<String, List<Method>>();
+      all_after = new TreeMap<String,List<Method>>();
+      getAnnotated(boobs.getClass(),tests,OOPTest.class);
+      getAnnotated(boobs.getClass(),before,OOPBefore.class);
+      getAnnotated(boobs.getClass(),after,OOPAfter.class);
+
+      setMap(all_before,before,OOPBefore.class);
+      setMap(all_after,after,OOPAfter.class);
+    }
+
+    private void setMap(Map<String,List<Method>> map,List<Method> list,Class<? extends Annotation> annot)
+            throws IllegalAccessException, InvocationTargetException{
+        for(Method m : tests){
+            List<Method> temp = new ArrayList<Method>();
+            List<String> vals = new ArrayList<String>();
+            for(Method k : list){
+                for(Method t : k.getAnnotation(annot).annotationType().getDeclaredMethods()){
+                    if(t.getName().equals("value")) {
+                        t.setAccessible(true);
+                        vals.addAll( Arrays.asList((String[]) t.invoke(annot, (Object[]) null)));
+                    }
+                }
+                if(vals.contains(m.getName())){
+                    temp.add(k);
+                }
+            }
+            map.put(m.getName(),temp);
+        }
+    }
     //maybe write a function that gets all of the methods with annotation "***"
     //if we need it ordered we can make it so on demand
     public OOPTestSummery runClass(Class<?> testClass)
@@ -230,11 +270,16 @@ public class OOPUnitCore {
     }
 
     //WRITE ONLY THIS ONE WITH THE WHOLE DAMN LOGIC
-     private OOPTestSummery runClassAux(Class<?> testClass, boolean tagFlag, String tag)
-             throws InstantiationException,InvocationTargetException,IllegalAccessException,NoSuchMethodException{
-        OOPTestSummery p;
+     private  OOPTestSummery runClassAux(Class<?> testClass, boolean tagFlag, String tag)
+             throws InstantiationException,InvocationTargetException,IllegalAccessException,NoSuchMethodException,IllegalArgumentException{
+        if( testClass==null   ||  !testClass.isAnnotationPresent(OOPTestClass.class)){
+            throw new IllegalArgumentException();
+        }
         testClass.getConstructor().setAccessible(true);
         boobs = testClass.getConstructor().newInstance();
+        setup();
+        getAllTests();
+        OOPTestSummery p = new OOPTestSummery();
      return p;
     }
 }
