@@ -38,33 +38,36 @@ public class OOPUnitCore {
     LOGIC: BEWARE - shit is complicated and has lots of pitfalls
         * Check if the class is a test class
         * Make an instance of the class
-        * Setup:
-            * by using getAnnotated:
-            *   make an ordered collection of all the OOPSetup methods of me and my daddys
-            *   methods ordered from son to father
-            * reverse list and get the same ordered from father to son
-            * run all by order
+        * Setup by using setup method
         * Test:
-            * (probably in another function for readability)
-            * by using getAnnotated:
-            *   make a collection for all the methods with annotation OOPTest
-            * filter tests by tag (if tagFlag is True)
-            * order tests by order if OOPTestClassType is ORDERED
-            * if some daddy is UNORDERED - order for them is 0 (default value)
+            * In another function:
+            *   by using getAnnotated:
+            *       make a collection for all the methods with annotation OOPTest
+            *   filter tests by tag (if tagFlag is True)
+            *   if OOPTestClassType is ORDERED order tests by order
+            *       if some daddy is UNORDERED - order for them is 0
+            *       ^(no need to check this - this is the default value)
             *
-            * map<testMethod,List of OOPBefore methods>:
+            * OOPBefore collection:
             *   using getAnnotated:
             *       for each method make collection of the OOPBefore
-            *       reverse list to get it to be sorted from father to son
+            *   reverse list to get it to be sorted from father to son
             *
-            * map<testMethod,List of OOPBefore methods> :
-            *       for each method make collection of the OOPAfter
-            *       no need to reverse (already sorted from son to father as needed)
+            * OOPAfter collection:
+            *   using getAnnotated:
+            *       for each method make collection of the OOPBefore
+            *   no need to reverse list (already sorted son to father)
+            *
+            * In another function:
+            *   make map<testMethod,List of OOPBefore methods>
+            *
+            * Do the same for OOPAfter
+            *   map<testMethod,List of OOPAfter methods> :
             *
             * Make an OOPTestSummery object.
             * for each method:
             *   Make backup collection\object\have no idea yet
-            *   By using the backUp methods
+            *   By using the backUp method
             *
             *   for each OOPBefore method:
             *       Backup fields
@@ -165,13 +168,36 @@ public class OOPUnitCore {
     Backup the objects fields (without going up the inheritance)
         backup by using one of the following (order matters):
             1.if the object has clone, make a clone of it
-            2.if the object has copy contructor use it
-            3.otherwise save it as it is (reference semantics)
+            2.if the object has copy constructor use it
+            3.otherwise save the actual object
+     LOGIC:
+        **maybe this should be done in runClass and not here:
+            **(probably as privet field for unitCore) make array of fields (getFields)
+        make array of objects (this will be the backup)
+
+        for each field, put into backup array:
+            set accessible
+            in a try-catch:
+               try clone
+               try copy constructor
+            if all fail: save the object itself (reference)
      */
 
-    static void backUp(Class<?> testClass, ){
+    static void backup(){
 
     }
+
+    /*
+    Restore the values of the fields in the test object
+    LOGIC:
+        for each field in the field array (private variable of unitCore)
+            set accessible
+            fields[i] = backup[i]
+     */
+    private void restore(){
+
+    }
+
     /*
      * Setup:
      * by using getAnnotated:
