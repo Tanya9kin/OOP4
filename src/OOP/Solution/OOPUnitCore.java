@@ -232,7 +232,7 @@ public class OOPUnitCore {
       getAnnotated(boobs.getClass(),tests,OOPTest.class);
       getAnnotated(boobs.getClass(),before,OOPBefore.class);
       getAnnotated(boobs.getClass(),after,OOPAfter.class);
-
+      Collections.reverse(before);
       setMap(all_before,before,OOPBefore.class);
       setMap(all_after,after,OOPAfter.class);
     }
