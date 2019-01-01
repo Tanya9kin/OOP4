@@ -1,6 +1,8 @@
 package OOP.Solution;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.List;
 
 public class OOPUnitCore {
 
@@ -32,41 +34,33 @@ public class OOPUnitCore {
     /*
     LOGIC: BEWARE - shit is complicated and has lots of pitfalls
         * Setup:
-            * make an ordered collection of all the OOPSetup methods of me and my daddys
-            * order by inheritence from father to son
-            * if there is an override - use the most recent one
-            * LOGIC:
-            *       start with me and go up the inheritance -
-            *       get all the methods annotated @OOPSetup and put in a list
-            *           if you see another method with same name, don't put it in
-            *       reverse list
-            *       run all by order
+            * by using get Annotated:
+            *   make an ordered collection of all the OOPSetup methods of me and my daddys
+            *   methods ordered from son to father
+            * reverse list and get the same ordered from father to son
+            * run all by order
         * Test:
             * (probably in another function for readability)
-            * make a collection for all the methods with annotation OOPTest
-            * map : for each method make collection of the OOPBefore
-            *       these methods are taken from all the tests for me and my daddys
-            *       ordered by inheritance from father to son
-            *       LOGIC:
-            *           start with me and go up the inheritance -
-            *           get all the OOPBefore which have the methods name in their list
-            *           add them to this list
-            *           if you see another method with the same name, don't put it in
-            *           reverse list
-            * map : for each method make collection of the OOPAfter same way only son to father order
-            *
+            * by using getAnnotated:
+            *   make a collection for all the methods with annotation OOPTest
             * filter tests by tag (if tagFlag is True)
             * order tests by order if OOPTestClassType is ORDERED
-            *       if some daddy is UNORDERED - order for them is 0 (default value)
+            * if some daddy is UNORDERED - order for them is 0 (default value)
+            *
+            * map<testMethod,List of OOPBefore methods>:
+            *   using getAnnotated:
+            *       for each method make collection of the OOPBefore
+            *       reverse list to get it to be sorted from father to son
+            *
+            * map<testMethod,List of OOPBefore methods> :
+            *       for each method make collection of the OOPAfter
+            *       no need to reverse (already sorted from son to father as needed)
+            *
             * Make an OOPTestSummery object.
             * for each method:
             *   Make backup collection\object\have no idea yet
-            *   Probably in another function
-            *   Backup the objects fields (without going up the inheritance)
-            *       backup by using one of the following (order matters):
-            *       1.if the object has clone, make a clone of it
-            *       2.if the object has copy contructor use it
-            *       3.otherwise save it as it is (reference semantics)
+            *   By using the backUp methods
+            *
             *   for each OOPBefore method:
             *       Backup fields
             *       run method in try catch
@@ -137,7 +131,33 @@ public class OOPUnitCore {
             *
      */
 
-    static getAnnotated(Annotation annot){
+    /*
+    MAKES A LIST WHICH CONSISTS OF ALL THE METHODS WITH annot IN testClass
+    AND IT'S DADDYS. THE LIST IS SORTED FROM SON TO FATTHER
+    LOGIC:
+        get new empty list - I can trust this because I am the only one using this
+        go over the testClass methods,
+        if has annot and we didn't have this one already in the list:
+            put it into the list
+        do the same for daddy of testClass recursively, until we get to the answer to #5
+        #5Q: how do we know when to stop? at Object?
+            do we go up the inheritance only if the father has @OOPTestClass annotation?
+        A:
+        #6Q: is it ok to declare List<Method>?
+        A:
+     */
+    static void getAnnotated(Class<?> testClass, List<Method> methods, Annotation annot){
+
+    }
+
+    /*
+    Backup the objects fields (without going up the inheritance)
+        backup by using one of the following (order matters):
+            1.if the object has clone, make a clone of it
+            2.if the object has copy contructor use it
+            3.otherwise save it as it is (reference semantics)
+     */
+    static void backUp(Class<?> testClass, ){
 
     }
 
