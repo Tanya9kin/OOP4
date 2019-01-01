@@ -2,6 +2,7 @@ package OOP.Solution;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -14,6 +15,7 @@ public class OOPUnitCore {
     private List<Method> after;
     private Map<String,List<Method>> all_before;
     private Map<String,List<Method>> all_after;
+    private Map<String, Object> back_up;
     /*
     #1 Q: why static?
     A:
@@ -159,7 +161,7 @@ public class OOPUnitCore {
         #6Q: is it ok to declare List<Method>?
         A: I think so
      */
-    static void getAnnotated(Class<?> testClass, List<Method> methods, Class<? extends  Annotation> annot){
+    private void getAnnotated(Class<?> testClass, List<Method> methods, Class<? extends  Annotation> annot){
             if(testClass==null){
                 return;
             }
@@ -188,8 +190,17 @@ public class OOPUnitCore {
             if all fail: save the object itself (reference)
      */
 
-    static void backup(){
+    private void backup(){
+        back_up = null;
+        back_up = new TreeMap<String,Field>();
 
+        for(Field f : Arrays.asList(boobs.getClass().getDeclaredFields())){
+            f.setAccessible(true);
+            try {
+                back_up.put(f.getName(), f.getClass().getField(f.getName()));
+            } catch (Exception e){
+            }
+        }
     }
 
     /*
@@ -223,7 +234,7 @@ public class OOPUnitCore {
     }
 
 
-    private void getAllTests() throws IllegalAccessException,InvocationTargetException{
+    private void getAllTests(boolean tagFlag,String tag) throws IllegalAccessException,InvocationTargetException{
       tests = new ArrayList<Method>();
       before = new ArrayList<Method>();
       after = new ArrayList<Method>();
@@ -233,6 +244,11 @@ public class OOPUnitCore {
       getAnnotated(boobs.getClass(),before,OOPBefore.class);
       getAnnotated(boobs.getClass(),after,OOPAfter.class);
       Collections.reverse(before);
+
+      if(tagFlag){
+            tests = tests.stream().filter(p-> p.getAnnotation(OOPTest.class).
+                    tag().equals(tag)).collect(Collectors.toList());
+      }
       setMap(all_before,before,OOPBefore.class);
       setMap(all_after,after,OOPAfter.class);
     }
@@ -272,13 +288,21 @@ public class OOPUnitCore {
     //WRITE ONLY THIS ONE WITH THE WHOLE DAMN LOGIC
      private  OOPTestSummery runClassAux(Class<?> testClass, boolean tagFlag, String tag)
              throws InstantiationException,InvocationTargetException,IllegalAccessException,NoSuchMethodException,IllegalArgumentException{
-        if( testClass==null   ||  !testClass.isAnnotationPresent(OOPTestClass.class)){
+        if(tag==null || testClass==null   ||  !testClass.isAnnotationPresent(OOPTestClass.class)){
             throw new IllegalArgumentException();
         }
         testClass.getConstructor().setAccessible(true);
         boobs = testClass.getConstructor().newInstance();
         setup();
-        getAllTests();
+        getAllTests(tagFlag,tag);
+        if(testClass.getAnnotation(OOPTestClass.class).value().equals(OOPTestClass.OOPTestClassType.ORDERED)){
+            tests = tests.stream().
+                    sorted((k1,k2)-> k1.getAnnotation(OOPTest.class).order() - k2.getAnnotation(OOPTest.class).order()).
+                    collect(Collectors.toList());
+        }
+
+
+
         OOPTestSummery p = new OOPTestSummery();
      return p;
     }
