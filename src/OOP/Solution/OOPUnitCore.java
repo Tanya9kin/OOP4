@@ -245,8 +245,8 @@ public class OOPUnitCore {
             for(Method k : list){
                 for(Method t : k.getAnnotation(annot).annotationType().getDeclaredMethods()){
                     if(t.getName().equals("value")) {
-                        t.setAccessible(true);
-                        vals.addAll( Arrays.asList((String[]) t.invoke(annot, (Object[]) null)));
+                        t.setAccessible(true); // Just for safety.
+                        vals.addAll(Arrays.asList((String[])t.invoke(annot)));
                     }
                 }
                 if(vals.contains(m.getName())){
