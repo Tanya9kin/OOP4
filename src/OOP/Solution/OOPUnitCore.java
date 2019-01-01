@@ -192,13 +192,14 @@ public class OOPUnitCore {
 
     private void backup(){
         back_up = null;
-        back_up = new TreeMap<String,Field>();
+        back_up = new TreeMap<String,Object>();
 
-        for(Field f : Arrays.asList(boobs.getClass().getDeclaredFields())){
+        for(Field f : boobs.getClass().getDeclaredFields()){
             f.setAccessible(true);
             try {
-                back_up.put(f.getName(), f.getClass().getField(f.getName()));
+                back_up.put(f.getName(), f.get(boobs));
             } catch (Exception e){
+                //What
             }
         }
     }
@@ -210,7 +211,11 @@ public class OOPUnitCore {
             set accessible
             fields[i] = backup[i]
      */
-    private void restore(){
+    private void restore() throws IllegalAccessException{
+        for( Field f : boobs.getClass().getDeclaredFields()){
+            f.setAccessible(true);
+            f.set(boobs,back_up.get(f.getName()));
+        }
 
     }
 
