@@ -2,7 +2,8 @@ package OOP.Solution;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class OOPUnitCore {
 
@@ -33,8 +34,10 @@ public class OOPUnitCore {
 
     /*
     LOGIC: BEWARE - shit is complicated and has lots of pitfalls
+        * Check if the class is a test class
+        * Make an instance of the class
         * Setup:
-            * by using get Annotated:
+            * by using getAnnotated:
             *   make an ordered collection of all the OOPSetup methods of me and my daddys
             *   methods ordered from son to father
             * reverse list and get the same ordered from father to son
@@ -142,12 +145,17 @@ public class OOPUnitCore {
         do the same for daddy of testClass recursively, until we get to the answer to #5
         #5Q: how do we know when to stop? at Object?
             do we go up the inheritance only if the father has @OOPTestClass annotation?
-        A:
+        A: Yes, Object will return null as superclass
         #6Q: is it ok to declare List<Method>?
-        A:
+        A: I think so
      */
     static void getAnnotated(Class<?> testClass, List<Method> methods, Annotation annot){
-
+            if(testClass==null){
+                return;
+            }
+            methods.addAll(Arrays.stream(testClass.getDeclaredMethods()).
+                    filter(m-> !methods.contains(m)&& m.isAnnotationPresent(annot.annotationType())).collect(Collectors.toList()));
+            getAnnotated(testClass.getSuperclass(),methods,annot);
     }
 
     /*
@@ -164,11 +172,12 @@ public class OOPUnitCore {
     //maybe write a function that gets all of the methods with annotation "***"
     //if we need it ordered we can make it so on demand
     static OOPTestSummery runClass(Class<?> testClass){
-        runClassAux(testClass,false,"");
+
+        return runClassAux(testClass,false,"");
     }
 
     static OOPTestSummery runClass(Class<?> testClass, String tag){
-        runClassAux(testClass,true,tag);
+       return runClassAux(testClass,true,tag);
     }
 
     //WRITE ONLY THIS ONE WITH THE WHOLE DAMN LOGIC
