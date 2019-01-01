@@ -1,12 +1,14 @@
 package OOP.Solution;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class OOPUnitCore {
-
+    private Object boobs; //Bring Object Oriented brograming (arab) stuff
     /*
     #1 Q: why static?
     A:
@@ -149,12 +151,13 @@ public class OOPUnitCore {
         #6Q: is it ok to declare List<Method>?
         A: I think so
      */
-    static void getAnnotated(Class<?> testClass, List<Method> methods, Annotation annot){
+    static void getAnnotated(Class<?> testClass, List<Method> methods, Class<? extends  Annotation> annot){
             if(testClass==null){
                 return;
             }
+
             methods.addAll(Arrays.stream(testClass.getDeclaredMethods()).
-                    filter(m-> !methods.contains(m)&& m.isAnnotationPresent(annot.annotationType())).collect(Collectors.toList()));
+                    filter(m-> !methods.contains(m)&& m.isAnnotationPresent(annot)).collect(Collectors.toList()));
             getAnnotated(testClass.getSuperclass(),methods,annot);
     }
 
@@ -165,23 +168,47 @@ public class OOPUnitCore {
             2.if the object has copy contructor use it
             3.otherwise save it as it is (reference semantics)
      */
+
     static void backUp(Class<?> testClass, ){
 
     }
-
+    /*
+     * Setup:
+     * by using getAnnotated:
+     *   make an ordered collection of all the OOPSetup methods of me and my daddys
+     *   methods ordered from son to father
+     * reverse list and get the same ordered from father to son
+     * run all by order
+     */
+    private void setup()
+            throws IllegalAccessException,InvocationTargetException{
+        List<Method> methods = new ArrayList<Method>();
+        getAnnotated(boobs.getClass(),methods,OOPSetup.class);
+        Collections.reverse(methods);
+        for (Method m : methods) {
+            m.setAccessible(true);
+            m.invoke(boobs);
+        }
+    }
     //maybe write a function that gets all of the methods with annotation "***"
     //if we need it ordered we can make it so on demand
-    static OOPTestSummery runClass(Class<?> testClass){
+    public OOPTestSummery runClass(Class<?> testClass)
+            throws InstantiationException,InvocationTargetException,IllegalAccessException,NoSuchMethodException{
 
         return runClassAux(testClass,false,"");
     }
 
-    static OOPTestSummery runClass(Class<?> testClass, String tag){
+    public OOPTestSummery runClass(Class<?> testClass, String tag)
+            throws InstantiationException,InvocationTargetException,IllegalAccessException,NoSuchMethodException{
        return runClassAux(testClass,true,tag);
     }
 
     //WRITE ONLY THIS ONE WITH THE WHOLE DAMN LOGIC
-    static OOPTestSummery runClassAux(Class<?> testClass, boolean tagFlag, String tag){
-
+     private OOPTestSummery runClassAux(Class<?> testClass, boolean tagFlag, String tag)
+             throws InstantiationException,InvocationTargetException,IllegalAccessException,NoSuchMethodException{
+        OOPTestSummery p;
+        testClass.getConstructor().setAccessible(true);
+        boobs = testClass.getConstructor().newInstance();
+     return p;
     }
 }
