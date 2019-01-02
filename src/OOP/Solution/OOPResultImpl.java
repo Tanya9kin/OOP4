@@ -33,7 +33,7 @@ public class OOPResultImpl implements OOPResult {
         return false;
     };
 
-    //TO DO:
+    //TODO:
     // need to write hash
     //need to check if in equals we need to call the equals of super
 }

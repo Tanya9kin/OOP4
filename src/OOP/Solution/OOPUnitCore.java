@@ -1,5 +1,7 @@
 package OOP.Solution;
 
+import OOP.Provided.OOPAssertionFailure;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -30,15 +32,15 @@ public class OOPUnitCore {
         * if the answer to their equals function (maybe to sided) = false
           assertionFailure
      */
-    static void assertEquals(Object expected, Object actual){
-
+    public static void assertEquals(Object expected, Object actual){
+        expected.equals(actual);
     }
 
     /*
     Used to fail a test by throwing OOPAssertionFailure
      */
-    static void fail(){
-
+    public void fail() throws OOPAssertionFailure {
+        throw new OOPAssertionFailure();
     }
 
     /*
@@ -277,6 +279,13 @@ public class OOPUnitCore {
             map.put(m.getName(),temp);
         }
     }
+
+
+    private void invokeMethods(Method m, Map<String,List<Method>> map) throws IllegalAccessException,InvocationTargetException{
+        for(Method k : map.get(m)){
+            k.invoke(boobs);
+        }
+    }
     //maybe write a function that gets all of the methods with annotation "***"
     //if we need it ordered we can make it so on demand
     public OOPTestSummery runClass(Class<?> testClass)
@@ -305,7 +314,19 @@ public class OOPUnitCore {
                     sorted((k1,k2)-> k1.getAnnotation(OOPTest.class).order() - k2.getAnnotation(OOPTest.class).order()).
                     collect(Collectors.toList());
         }
+        backup();
 
+        //Brain at 5am - Nope. I know this is missing shit. Fix me when either one of us is up.
+        for(Method m : tests){
+            try {
+                invokeMethods(m,all_before);
+                backup();
+                m.invoke(boobs);
+                invokeMethods(m,all_after);
+            } catch (Exception e){
+                restore();
+            }
+        }
 
 
         OOPTestSummery p = new OOPTestSummery();
