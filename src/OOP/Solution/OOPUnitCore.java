@@ -242,7 +242,6 @@ public class OOPUnitCore {
             f.setAccessible(true);
             f.set(back_up[i++].getClass(),back_up[i++]);
         }
-
     }
 
     /*
