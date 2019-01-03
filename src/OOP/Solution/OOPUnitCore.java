@@ -30,7 +30,9 @@ public class OOPUnitCore {
           assertionFailure
      */
     public static void assertEquals(Object expected, Object actual){
-        expected.equals(actual);
+        if(!expected.equals(actual)){
+            throw new OOPAssertionFailure();
+        }
     }
 
     /*
@@ -211,15 +213,16 @@ public class OOPUnitCore {
         int i=0;
         for(Field f : test_instance.getClass().getDeclaredFields()){
             f.setAccessible(true);
+            Object current_field = f.get(test_instance);
             try {
-                Method f_clone = f.getClass().getMethod("clone");
+                Method f_clone = current_field.getClass().getMethod("clone");
                 f_clone.setAccessible(true);
-                back_up[i] = f_clone.invoke(f);
+                back_up[i] = f_clone.invoke(current_field);
             } catch (NoSuchMethodException clone){
                 try {
-                    Constructor f_copy_ctr = f.getClass().getDeclaredConstructor(f.getClass());
+                    Constructor f_copy_ctr = current_field.getClass().getDeclaredConstructor(f.getClass());
                     f_copy_ctr.setAccessible(true);
-                    back_up[i] = f_copy_ctr.newInstance(f);
+                    back_up[i] = f_copy_ctr.newInstance(current_field);
                 } catch (NoSuchMethodException CopyCtr){
                     back_up[i] = f;
                 }
