@@ -3,15 +3,12 @@ package OOP.Solution;
 import OOP.Provided.OOPAssertionFailure;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class OOPUnitCore {
-    private Object boobs; //Bring Object Oriented brograming (arab) stuff
+    private Object test_instance; //Bring Object Oriented brograming (arab) stuff
     private List<Method> tests;
     private List<Method> before;
     private List<Method> after;
@@ -196,10 +193,10 @@ public class OOPUnitCore {
         back_up = null;
         back_up = new TreeMap<String,Object>();
 
-        for(Field f : boobs.getClass().getDeclaredFields()){
+        for(Field f : test_instance.getClass().getDeclaredFields()){
             f.setAccessible(true);
             try {
-                back_up.put(f.getName(), f.get(boobs));
+                back_up.put(f.getName(), f.get(test_instance));
             } catch (Exception e){
                 //What
             }
@@ -213,10 +210,11 @@ public class OOPUnitCore {
             set accessible
             fields[i] = backup[i]
      */
+
     private void restore() throws IllegalAccessException{
-        for( Field f : boobs.getClass().getDeclaredFields()){
+        for( Field f : test_instance.getClass().getDeclaredFields()){
             f.setAccessible(true);
-            f.set(boobs,back_up.get(f.getName()));
+            f.set(test_instance,back_up.get(f.getName()));
         }
 
     }
@@ -232,24 +230,35 @@ public class OOPUnitCore {
     private void setup()
             throws IllegalAccessException,InvocationTargetException{
         List<Method> methods = new ArrayList<Method>();
-        getAnnotated(boobs.getClass(),methods,OOPSetup.class);
+        getAnnotated(test_instance.getClass(),methods,OOPSetup.class);
         Collections.reverse(methods);
         for (Method m : methods) {
             m.setAccessible(true);
-            m.invoke(boobs);
+            m.invoke(test_instance);
         }
     }
 
 
+    /*
+    makes all the resources for runTest.
+    tests - list of all methods annotated @OOPtest going up the inheritance
+    before - list of all methods annotated @OOPBefore going up the inheritance
+    after -  list of all methods annotated @OOPAfter going up the inheritance
+    all_before - map of lists of all methods annotated @OOPBefore
+                 and will run before each test method
+    all_after - map of lists of all methods annotated @OOPAfter
+                 and will run after each test method
+
+     */
     private void getAllTests(boolean tagFlag,String tag) throws IllegalAccessException,InvocationTargetException{
       tests = new ArrayList<Method>();
       before = new ArrayList<Method>();
       after = new ArrayList<Method>();
       all_before = new TreeMap<String, List<Method>>();
       all_after = new TreeMap<String,List<Method>>();
-      getAnnotated(boobs.getClass(),tests,OOPTest.class);
-      getAnnotated(boobs.getClass(),before,OOPBefore.class);
-      getAnnotated(boobs.getClass(),after,OOPAfter.class);
+      getAnnotated(test_instance.getClass(),tests,OOPTest.class);
+      getAnnotated(test_instance.getClass(),before,OOPBefore.class);
+      getAnnotated(test_instance.getClass(),after,OOPAfter.class);
       Collections.reverse(before);
 
       if(tagFlag){
@@ -283,7 +292,7 @@ public class OOPUnitCore {
 
     private void invokeMethods(Method m, Map<String,List<Method>> map) throws IllegalAccessException,InvocationTargetException{
         for(Method k : map.get(m)){
-            k.invoke(boobs);
+            k.invoke(test_instance);
         }
     }
     //maybe write a function that gets all of the methods with annotation "***"
@@ -306,7 +315,7 @@ public class OOPUnitCore {
             throw new IllegalArgumentException();
         }
         testClass.getConstructor().setAccessible(true);
-        boobs = testClass.getConstructor().newInstance();
+        test_instance = testClass.getConstructor().newInstance();
         setup();
         getAllTests(tagFlag,tag);
         if(testClass.getAnnotation(OOPTestClass.class).value().equals(OOPTestClass.OOPTestClassType.ORDERED)){
@@ -321,7 +330,7 @@ public class OOPUnitCore {
             try {
                 invokeMethods(m,all_before);
                 backup();
-                m.invoke(boobs);
+                m.invoke(test_instance);
                 invokeMethods(m,all_after);
             } catch (Exception e){
                 restore();

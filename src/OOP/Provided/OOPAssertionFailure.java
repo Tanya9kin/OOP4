@@ -1,6 +1,7 @@
 package OOP.Provided;
 
 
+
 /**
  * This class represents an assertion error within a test method.
  */
