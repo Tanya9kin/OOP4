@@ -1,6 +1,8 @@
 package OOP.Solution;
 
 import OOP.Provided.OOPAssertionFailure;
+import OOP.Provided.OOPExpectedException;
+import OOP.Provided.OOPResult;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
@@ -15,6 +17,7 @@ public class OOPUnitCore {
     private Map<String,List<Method>> all_before;
     private Map<String,List<Method>> all_after;
     private Object[] back_up;
+    private Map <String,OOPResult> test_summery;
     /*
     #1 Q: why static?
     A:
@@ -44,48 +47,34 @@ public class OOPUnitCore {
 
     /*
     LOGIC: BEWARE - shit is complicated and has lots of pitfalls
-        * Check if the class is a test class
-        * Make an instance of the class
-        * Setup by using setup method
-        * Test:
-            * In another function:
-            *   by using getAnnotated:
-            *       make a collection for all the methods with annotation OOPTest
-            *   filter tests by tag (if tagFlag is True)
-            *   if OOPTestClassType is ORDERED order tests by order
-            *       if some daddy is UNORDERED - order for them is 0
-            *       ^(no need to check this - this is the default value)
-            *
-            * OOPBefore collection:
-            *   using getAnnotated:
-            *       for each method make collection of the OOPBefore
-            *   reverse list to get it to be sorted from father to son
-            *
-            * OOPAfter collection:
-            *   using getAnnotated:
-            *       for each method make collection of the OOPBefore
-            *   no need to reverse list (already sorted son to father)
-            *
-            * In another function:
-            *   make map<testMethod,List of OOPBefore methods>
-            *
-            * Do the same for OOPAfter
-            *   map<testMethod,List of OOPAfter methods> :
-            *
-            * Make an OOPTestSummery object.
-            * for each method:
-            *   Make backup collection\object\have no idea yet
-            *   By using the backUp method
-            *
-            *   for each OOPBefore method:
-            *       Backup fields
-            *       run method in try catch
-            *       if a method throws an exception
-            *           restore fields
-            *           add OOPTestResult.ERROR for this test method
-            *               the message will be the name of the Exception class
-            *           on to the next test
-            *   run method in try catch block: (some reference shit here:)
+V        * Check if the class is a test class
+V        * Make an instance of the class
+V        * Setup by using setup method
+V        * In another function:
+            make a collection for all the methods with annotation OOPTest
+            filter tests by tag (if tagFlag is True)
+            if OOPTestClassType is ORDERED order tests by order
+            if some daddy is UNORDERED - order for them is 0
+            ^(no need to check this - this is the default value)
+
+V         * OOPBefore collection:
+            using getAnnotated:
+            for each method make collection of the OOPBefore
+            reverse list to get it to be sorted from father to son
+
+V         * OOPAfter collection:
+            using getAnnotated:
+            for each method make collection of the OOPBefore
+            no need to reverse list (already sorted son to father)
+
+V         * In another function:
+            make map<testMethod,List of OOPBefore methods>
+
+V         * Do the same for OOPAfter
+            map<testMethod,List of OOPAfter methods> :
+
+         * Make an OOPTestSummery object.
+
             SUCCESS -
                 * there was no exception thrown or
                 * if the exception that was thrown is expected and has the message
@@ -109,42 +98,53 @@ public class OOPUnitCore {
                 * or no exception was thrown although we expected it
                 * return the class of the exception (we expected or did not expect)
 
-            AND THAT IS WHY LOGIC:
-                * if there is a field with annotation @OOPExceptionRule save it in variable
-                * check that it is non static and has a return value for expect other than null
-                * #3Q: can this be an exception of another class? I mean - not OOPExpectedException?
-                * A:
-                * #4Q: The expect method has to be invoked in the test - does it mean in each
-                *   test method? if it is - how do we check this?
-                * A:
-                *
-                * catch (expected exception)
-                *   if the message is the expected message all good - SUCCESS
-                *       message is:
-                *   else - EXPECTED_EXCEPTION_MISMATCH
-                *       message is: OOPExceptionMismatch.getMessage()
-                * catch (OOPAssertionFailure)
-                *   FAILURE
-                *   message is:
-                * catch (...)
-                *   ERROR
-                *   message is the class of the caught exception
-                * if no exception but we expected one:
-                *   ERROR
-                *   message is the class of the expected exception
-                *
-            *   run OOPAfter:
-            *       Backup fields
-            *       run method in try catch
-            *       if a method throws an exception
-            *           restore fields
-            *           add OOPTestResult.ERROR for this test method
-            *               the message will be the name of the Exception class
-            *           move on to the next test
-            *
-            *
-            *  Add an entry to the summery with the name of the method and result
-            *
+    AND THAT IS WHY LOGIC:
+
+        * for each method in tests:
+            *for each OOPBefore method in all_tests for this method:
+                Backup fields
+                run method in try catch
+                if the method throws an exception
+                    restore fields
+                    add OOPTestResult.ERROR for this test method
+                    the message will be the name of the Exception class
+                    on to the next test
+            *run method in try catch block: (some reference shit here:)
+        * if there is a field with annotation @OOPExceptionRule save it in variable
+        check that it is non static and has a return value for expect other than null
+
+        #3Q: can this be an exception of another class? I mean - not OOPExpectedException?
+        A: nope
+        #4Q: The expect method has to be invoked in the test - does it mean in each
+            test method? if it is - how do we check this?
+        A: we put null in it before each test
+
+        catch (expected exception)
+            if the message is the expected message all good - SUCCESS
+               message is: ***
+            else - EXPECTED_EXCEPTION_MISMATCH
+                    message is: OOPExceptionMismatch.getMessage()
+        catch (OOPAssertionFailure)
+            FAILURE
+            message is: ***
+        catch (...)
+            ERROR
+            message is the class of the caught exception
+            if no exception but we expected one:
+                ERROR
+                message is the class of the expected exception
+
+        * run OOPAfter:
+            * for each OOPAfter method in all_tests for this method:
+                Backup fields
+                run method in try catch
+                if a method throws an exception
+                restore fields
+                add OOPTestResult.ERROR for this test method
+                    the message will be the name of the Exception class
+                move on to the next test
+
+            Add an entry to the summery with the name of the method and result
      */
 
     /*
@@ -172,24 +172,6 @@ public class OOPUnitCore {
             getAnnotated(testClass.getSuperclass(),methods,annot);
     }
 
-    /*
-    Backup the objects fields (without going up the inheritance)
-        backup by using one of the following (order matters):
-            1.if the object has clone, make a clone of it
-            2.if the object has copy constructor use it
-            3.otherwise save the actual object
-     LOGIC:
-        instantiate the back_up array with new map
-        for each field:
-            set accessible
-            in a try-catch:
-               try clone and put into map
-               try copy constructor and put into map
-            if all fail: save the object itself (reference) into map
-     Q: does it have to be a map? Maybe this can be an array of Objects?
-        because every time we do getFields we have the same answer..?
-     A:
-     */
     /*
     Backup the objects fields (without going up the inheritance)
         backup by using one of the following (order matters):
@@ -365,9 +347,9 @@ public class OOPUnitCore {
     }
     */
 
-
-    private void invokeMethods(Method m, Map<String,List<Method>> map) throws IllegalAccessException,InvocationTargetException{
+    private void invokeMethods(Method m, Map<String,List<Method>> map) throws IllegalAccessException, InvocationTargetException, InstantiationException {
         for(Method k : map.get(m)){
+            backup();
             k.invoke(test_instance);
         }
     }
@@ -399,22 +381,77 @@ public class OOPUnitCore {
                     sorted((k1,k2)-> k1.getAnnotation(OOPTest.class).order() - k2.getAnnotation(OOPTest.class).order()).
                     collect(Collectors.toList());
         }
-        backup();
-
-        //Brain at 5am - Nope. I know this is missing shit. Fix me when either one of us is up.
+        test_summery = new TreeMap<>();
+        if(Arrays.asList(test_summery.getClass().getDeclaredFields()).contains(OOPExpectedException.class)){
+            /*
+            TODO: get the field that is of type OOPExpectedException and save reference into variable for future use
+                important note:
+                we need the field from test_instance itself and not just from it's class
+             */
+        }
         for(Method m : tests){
+            //TODO: define variable flag for knowing if there was an exepction = false
             try {
                 invokeMethods(m,all_before);
-                backup();
-                m.invoke(test_instance);
-                invokeMethods(m,all_after);
-            } catch (Exception e){
+            } catch (Throwable e){
                 restore();
+                test_summery.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.ERROR, e.getClass().getName()));
+                continue;
+            }
+            try {
+                //TODO: put null into expectedException - so that we know it was changed within this test
+                //TODO: all of the things in the try catch are of type OOPResultImpl that we put into test_summery
+                m.invoke(test_instance);
+            } catch (/*expected exception*/) {
+                /*
+                TODO:
+                exeption flag = true
+                if message is the expected message
+                    SUCCESS
+                    message is: null
+                else EXPECTED_EXCEPTION_MISMATCH
+                     message is: OOPExceptionMismatch.getMessage()
+                 */
+            } catch (OOPAssertionFailure e) {
+                /*
+                TODO:
+                exeption flag = true
+                    FAILURE
+                    message is: OOPAssertionFailure.getMessage
+                 */
+            } catch (Throwable e) {
+                /*
+                TODO:
+                exeption flag = true
+                    e != null
+                        EXPECTED_EXCEPTION_MISMATCH
+                        message is: e.getMessage
+                    else
+                        ERROR
+                        message is: e.class.name
+                 */
+            }
+            /*
+            TODO:
+                if expectedException not null but no exception caugth (exeption flag = false)
+                    ERROR
+                    message is: the class of the expected exception
+                if expectedException null and not exception caught (exception flag = false)
+                    SUCCESS
+                    message is: null
+             */
+            try {
+                invokeMethods(m,all_after);
+            } catch (Throwable e){
+                restore();
+                /*
+                NOTE: we are fine with the fact that here we might override what we put
+                    during the test, because if this fails, the test fails
+                */
+                test_summery.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.ERROR, e.getClass().getName()));
+                continue;
             }
         }
-
-
-        OOPTestSummery p = new OOPTestSummery();
-     return p;
+     return new OOPTestSummery(test_summery);
     }
 }
