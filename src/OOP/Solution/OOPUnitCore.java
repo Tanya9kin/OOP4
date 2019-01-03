@@ -400,22 +400,25 @@ V         * Do the same for OOPAfter
             }
             try {
                 //TODO: put null into expectedException - so that we know it was changed within this test
-                //TODO: all of the things in the try catch are of type OOPResultImpl that we put into test_summery
                 m.invoke(test_instance);
             } catch (/*expected exception*/) {
                 /*
                 TODO:
                 exeption flag = true
                 if message is the expected message
-                    SUCCESS
-                    message is: null
-                else EXPECTED_EXCEPTION_MISMATCH
-                     message is: OOPExceptionMismatch.getMessage()
+                    OOResultImpl variable with:
+                        SUCCESS
+                        message is: null
+                else
+                     OOResultImpl variable with:
+                        EXPECTED_EXCEPTION_MISMATCH
+                        message is: OOPExceptionMismatch.getMessage()
                  */
             } catch (OOPAssertionFailure e) {
                 /*
                 TODO:
                 exeption flag = true
+                OOResultImpl variable with:
                     FAILURE
                     message is: OOPAssertionFailure.getMessage
                  */
@@ -424,21 +427,25 @@ V         * Do the same for OOPAfter
                 TODO:
                 exeption flag = true
                     e != null
-                        EXPECTED_EXCEPTION_MISMATCH
-                        message is: e.getMessage
+                        OOResultImpl variable with:
+                            EXPECTED_EXCEPTION_MISMATCH
+                            message is: e.getMessage
                     else
-                        ERROR
-                        message is: e.class.name
+                        OOResultImpl variable with:
+                            ERROR
+                            message is: e.class.name
                  */
             }
             /*
             TODO:
                 if expectedException not null but no exception caugth (exeption flag = false)
-                    ERROR
-                    message is: the class of the expected exception
+                    OOResultImpl variable with:
+                        ERROR
+                        message is: the class of the expected exception
                 if expectedException null and not exception caught (exception flag = false)
-                    SUCCESS
-                    message is: null
+                    OOResultImpl variable with:
+                        SUCCESS
+                        message is: null
              */
             try {
                 invokeMethods(m,all_after);
