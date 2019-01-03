@@ -14,7 +14,7 @@ public class OOPUnitCore {
     private List<Method> after;
     private Map<String,List<Method>> all_before;
     private Map<String,List<Method>> all_after;
-    private Map<String, Object> back_up;
+    private Object[] back_up;
     /*
     #1 Q: why static?
     A:
@@ -177,29 +177,54 @@ public class OOPUnitCore {
             2.if the object has copy constructor use it
             3.otherwise save the actual object
      LOGIC:
-        **maybe this should be done in runClass and not here:
-            **(probably as privet field for unitCore) make array of fields (getFields)
-        make array of objects (this will be the backup)
-
-        for each field, put into backup array:
+        instantiate the back_up array with new map
+        for each field:
             set accessible
             in a try-catch:
-               try clone
-               try copy constructor
-            if all fail: save the object itself (reference)
+               try clone and put into map
+               try copy constructor and put into map
+            if all fail: save the object itself (reference) into map
+     Q: does it have to be a map? Maybe this can be an array of Objects?
+        because every time we do getFields we have the same answer..?
+     A:
      */
-
-    private void backup(){
-        back_up = null;
-        back_up = new TreeMap<String,Object>();
-
+    /*
+    Backup the objects fields (without going up the inheritance)
+        backup by using one of the following (order matters):
+            1.if the object has clone, make a clone of it
+            2.if the object has copy constructor use it
+            3.otherwise save the actual object
+     LOGIC:
+        instantiate the back_up array with new array to erase the last backup
+        for each field:
+            set accessible
+            in a try-catch:
+               try clone and put into map
+               try copy constructor and put into map
+            if all fail: save the object itself (reference) into map
+     Q: does it have to be a map? Maybe this can be an array of Objects?
+        because every time we do getFields we have the same answer..?
+     A: yep
+     */
+    private void backup() throws InvocationTargetException, IllegalAccessException, InstantiationException {
+        back_up = new Object[test_instance.getClass().getDeclaredFields().length];
+        int i=0;
         for(Field f : test_instance.getClass().getDeclaredFields()){
             f.setAccessible(true);
             try {
-                back_up.put(f.getName(), f.get(test_instance));
-            } catch (Exception e){
-                //What
+                Method f_clone = f.getClass().getMethod("clone");
+                f_clone.setAccessible(true);
+                back_up[i] = f_clone.invoke(f);
+            } catch (NoSuchMethodException clone){
+                try {
+                    Constructor f_copy_ctr = f.getClass().getDeclaredConstructor(f.getClass());
+                    f_copy_ctr.setAccessible(true);
+                    back_up[i] = f_copy_ctr.newInstance(f);
+                } catch (NoSuchMethodException CopyCtr){
+                    back_up[i] = f;
+                }
             }
+            i++;
         }
     }
 
@@ -212,9 +237,10 @@ public class OOPUnitCore {
      */
 
     private void restore() throws IllegalAccessException{
-        for( Field f : test_instance.getClass().getDeclaredFields()){
+        int i=0;
+        for(Field f : test_instance.getClass().getDeclaredFields()){
             f.setAccessible(true);
-            f.set(test_instance,back_up.get(f.getName()));
+            f.set(back_up[i++].getClass(),back_up[i++]);
         }
 
     }
@@ -251,25 +277,72 @@ public class OOPUnitCore {
 
      */
     private void getAllTests(boolean tagFlag,String tag) throws IllegalAccessException,InvocationTargetException{
-      tests = new ArrayList<Method>();
-      before = new ArrayList<Method>();
-      after = new ArrayList<Method>();
-      all_before = new TreeMap<String, List<Method>>();
-      all_after = new TreeMap<String,List<Method>>();
+      tests = new ArrayList<>();
+      before = new ArrayList<>();
+      after = new ArrayList<>();
+      all_before = new TreeMap<>();
+      all_after = new TreeMap<>();
       getAnnotated(test_instance.getClass(),tests,OOPTest.class);
       getAnnotated(test_instance.getClass(),before,OOPBefore.class);
       getAnnotated(test_instance.getClass(),after,OOPAfter.class);
       Collections.reverse(before);
 
+      /*
+      Filtering out the tests that won't be done before making the maps
+      so that the maps will have lists for only the relevant methods
+       */
       if(tagFlag){
             tests = tests.stream().filter(p-> p.getAnnotation(OOPTest.class).
                     tag().equals(tag)).collect(Collectors.toList());
       }
-      setMap(all_before,before,OOPBefore.class);
-      setMap(all_after,after,OOPAfter.class);
+      //this is so that in the set***Map we can just add elements into existing lists
+      for(Method m : tests){
+          all_before.put(m.getName(),new ArrayList<Method>());
+          all_after.put(m.getName(),new ArrayList<Method>());
+      }
+      setBeforeMap();
+      setAfterMap();
     }
 
-    private void setMap(Map<String,List<Method>> map,List<Method> list,Class<? extends Annotation> annot)
+    //Tanyas version - which she thinks is a bit clearer and less error prone
+    //              also doesn't throw and may be easier to debug
+    /*
+    Makes a map in which the key is a test method and value is list of methods that
+    need to be run before the test method
+    LOGIC:
+        for each test method
+            for each before method
+                put into the list in the map that ccorrelates with the method name
+     */
+    private void setBeforeMap(){
+        for(Method m : tests){
+            for(Method k : before){
+                if(Arrays.asList(k.getAnnotation(OOPBefore.class).value()).contains(m.getName()))
+                    all_before.get(m.getName()).add(k);
+            }
+        }
+    }
+
+    /*
+    Makes a map in which the key is a test method and value is list of methods that
+    need to be run after the test method
+    LOGIC:
+        for each test method
+            for each before method
+                put into the list in the map that ccorrelates with the method name
+     */
+    private void setAfterMap(){
+        for(Method m : tests){
+            for(Method k : after){
+                if(Arrays.asList(k.getAnnotation(OOPBefore.class).value()).contains(m.getName()))
+                    all_after.get(m.getName()).add(k);
+            }
+        }
+    }
+
+    /*
+    //Nimrods version
+    private void setBeforeAfterMaps(Map<String,List<Method>> map, List<Method> list, Class<? extends Annotation> annot)
             throws IllegalAccessException, InvocationTargetException{
         for(Method m : tests){
             List<Method> temp = new ArrayList<Method>();
@@ -288,6 +361,7 @@ public class OOPUnitCore {
             map.put(m.getName(),temp);
         }
     }
+    */
 
 
     private void invokeMethods(Method m, Map<String,List<Method>> map) throws IllegalAccessException,InvocationTargetException{
