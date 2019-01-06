@@ -195,13 +195,16 @@ V         * Do the same for OOPAfter
         int i=0;
         for(Field f : test_instance.getClass().getDeclaredFields()){
             f.setAccessible(true);
-            Object current_field = f.get(test_instance);
+            Object current_field = f.get(test_instance); //f can be null - and this will not work - just put null into the backup
             try {
-                Method f_clone = current_field.getClass().getMethod("clone");
+                //TODO:clonable isAssignableFrom class ==> tells if this class can invoke clone
+                //TODO:we need to get the method defined either in this class or in one of its daddys
+                Method f_clone = current_field.getClass().getMethod("clone"); //if method is private this will not work
                 f_clone.setAccessible(true);
                 back_up[i] = f_clone.invoke(current_field);
             } catch (NoSuchMethodException clone){
                 try {
+                    //TODO:the copy constructor may be in the daddys - and if so, this code wont find it - need to implement
                     Constructor f_copy_ctr = current_field.getClass().getDeclaredConstructor(f.getClass());
                     f_copy_ctr.setAccessible(true);
                     back_up[i] = f_copy_ctr.newInstance(current_field);
