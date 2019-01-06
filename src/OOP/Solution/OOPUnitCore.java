@@ -74,7 +74,7 @@ V         * In another function:
 V         * Do the same for OOPAfter
             map<testMethod,List of OOPAfter methods> :
 
-         * Make an OOPTestSummery object.
+         * Make an OOPTestSummary object.
 
             SUCCESS -
                 * there was no exception thrown or
@@ -179,38 +179,29 @@ V         * Do the same for OOPAfter
             1.if the object has clone, make a clone of it
             2.if the object has copy constructor use it
             3.otherwise save the actual object
-     LOGIC:
-        instantiate the back_up array with new array to erase the last backup
-        for each field:
-            set accessible
-            in a try-catch:
-               try clone and put into map
-               try copy constructor and put into map
-            if all fail: save the object itself (reference) into map
-     Q: does it have to be a map? Maybe this can be an array of Objects?
-        because every time we do getFields we have the same answer..?
-     A: yep
      */
     private void backup() throws InvocationTargetException, IllegalAccessException, InstantiationException {
         back_up = new Object[test_instance.getClass().getDeclaredFields().length];
         int i=0;
         for(Field f : test_instance.getClass().getDeclaredFields()){
             f.setAccessible(true);
-            Object current_field = f.get(test_instance); //f can be null - and this will not work - just put null into the backup
+            Object current_field = f.get(test_instance);
+            if(current_field==null){
+                back_up[i]=null;
+                continue;
+            }
             try {
-                //note maybe:clonable isAssignableFrom class ==> tells if this class can invoke clone
-                //note maybe: we need to get the method defined either in this class or in one of its daddys
-                Method f_clone = current_field.getClass().getMethod("clone"); //if method is private this will not work
+                Method f_clone = current_field.getClass().getMethod("clone");
                 f_clone.setAccessible(true);
                 back_up[i] = f_clone.invoke(current_field);
             } catch (NoSuchMethodException clone){
                 try {
-                    //note:the copy constructor may be in the daddys - and if so, this code wont find it - need to implement
-                    Constructor f_copy_ctr = current_field.getClass().getDeclaredConstructor(f.getClass());
+                    //Think about what happens if the FATHER has a copy constructor but I dont (Impossible?)
+                    Constructor f_copy_ctr = current_field.getClass().getDeclaredConstructor(current_field.getClass());
                     f_copy_ctr.setAccessible(true);
                     back_up[i] = f_copy_ctr.newInstance(current_field);
                 } catch (NoSuchMethodException CopyCtr){
-                    back_up[i] = f;
+                    back_up[i] = current_field;
                 }
             }
             i++;
@@ -219,12 +210,7 @@ V         * Do the same for OOPAfter
 
     /*
     Restore the values of the fields in the test object
-    LOGIC:
-        for each field in the field array (private variable of unitCore)
-            set accessible
-            fields[i] = backup[i]
      */
-
     private void restore() throws IllegalAccessException{
         int i=0;
         for(Field f : test_instance.getClass().getDeclaredFields()){
@@ -255,21 +241,13 @@ V         * Do the same for OOPAfter
 
     /*
     makes all the resources for runTest.
-    tests - list of all methods annotated @OOPtest going up the inheritance
-    before - list of all methods annotated @OOPBefore going up the inheritance
-    after -  list of all methods annotated @OOPAfter going up the inheritance
-    all_before - map of lists of all methods annotated @OOPBefore
-                 and will run before each test method
-    all_after - map of lists of all methods annotated @OOPAfter
-                 and will run after each test method
-
      */
     private void getAllTests(boolean tagFlag,String tag) throws IllegalAccessException,InvocationTargetException{
-      tests = new ArrayList<>();
-      before = new ArrayList<>();
-      after = new ArrayList<>();
-      all_before = new TreeMap<>();
-      all_after = new TreeMap<>();
+      tests = new ArrayList<>(); //list of all methods annotated @OOPtest going up the inheritance
+      before = new ArrayList<>(); //list of all methods annotated @OOPBefore going up the inheritance
+      after = new ArrayList<>(); //list of all methods annotated @OOPAfter going up the inheritance
+      all_before = new TreeMap<>();//map of lists of all methods annotated @OOPBefore and will run before each test method
+      all_after = new TreeMap<>(); //map of lists of all methods annotated @OOPAfter and will run after each test method
       getAnnotated(test_instance.getClass(),tests,OOPTest.class);
       getAnnotated(test_instance.getClass(),before,OOPBefore.class);
       getAnnotated(test_instance.getClass(),after,OOPAfter.class);
@@ -291,16 +269,9 @@ V         * Do the same for OOPAfter
       setBeforeMap();
       setAfterMap();
     }
-
-    //Tanyas version - which she thinks is a bit clearer and less error prone
-    //              also doesn't throw and may be easier to debug
-    /*
+ /*
     Makes a map in which the key is a test method and value is list of methods that
     need to be run before the test method
-    LOGIC:
-        for each test method
-            for each before method
-                put into the list in the map that ccorrelates with the method name
      */
     private void setBeforeMap(){
         for(Method m : tests){
@@ -314,10 +285,6 @@ V         * Do the same for OOPAfter
     /*
     Makes a map in which the key is a test method and value is list of methods that
     need to be run after the test method
-    LOGIC:
-        for each test method
-            for each before method
-                put into the list in the map that ccorrelates with the method name
      */
     private void setAfterMap(){
         for(Method m : tests){
@@ -328,31 +295,8 @@ V         * Do the same for OOPAfter
         }
     }
 
-    /*
-    //Nimrods version
-    private void setBeforeAfterMaps(Map<String,List<Method>> map, List<Method> list, Class<? extends Annotation> annot)
-            throws IllegalAccessException, InvocationTargetException{
-        for(Method m : tests){
-            List<Method> temp = new ArrayList<Method>();
-            List<String> vals = new ArrayList<String>();
-            for(Method k : list){
-                for(Method t : k.getAnnotation(annot).annotationType().getDeclaredMethods()){
-                    if(t.getName().equals("value")) {
-                        t.setAccessible(true); // Just for safety.
-                        vals.addAll(Arrays.asList((String[])t.invoke(annot)));
-                    }
-                }
-                if(vals.contains(m.getName())){
-                    temp.add(k);
-                }
-            }
-            map.put(m.getName(),temp);
-        }
-    }
-    */
-
     private void invokeMethods(Method m, Map<String,List<Method>> map) throws IllegalAccessException, InvocationTargetException, InstantiationException {
-        for(Method k : map.get(m)){
+        for(Method k : map.get(m.getName())){
             backup();
             k.invoke(test_instance);
         }
@@ -360,19 +304,19 @@ V         * Do the same for OOPAfter
 
     //maybe write a function that gets all of the methods with annotation "***"
     //if we need it ordered we can make it so on demand
-    public OOPTestSummery runClass(Class<?> testClass)
+    public OOPTestSummary runClass(Class<?> testClass)
             throws InstantiationException,InvocationTargetException,IllegalAccessException,NoSuchMethodException{
 
         return runClassAux(testClass,false,"");
     }
 
-    public OOPTestSummery runClass(Class<?> testClass, String tag)
+    public OOPTestSummary runClass(Class<?> testClass, String tag)
             throws InstantiationException,InvocationTargetException,IllegalAccessException,NoSuchMethodException{
        return runClassAux(testClass,true,tag);
     }
 
     //WRITE ONLY THIS ONE WITH THE WHOLE DAMN LOGIC
-     private  OOPTestSummery runClassAux(Class<?> testClass, boolean tagFlag, String tag)
+     private OOPTestSummary runClassAux(Class<?> testClass, boolean tagFlag, String tag)
              throws InstantiationException,InvocationTargetException,IllegalAccessException,NoSuchMethodException,IllegalArgumentException{
         if(tag==null || testClass==null   ||  !testClass.isAnnotationPresent(OOPTestClass.class)){
             throw new IllegalArgumentException();
@@ -468,6 +412,6 @@ V         * Do the same for OOPAfter
                 continue;
             }
         }
-     return new OOPTestSummery(test_summery);
+     return new OOPTestSummary(test_summery);
     }
 }

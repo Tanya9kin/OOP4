@@ -3,10 +3,10 @@ package OOP.Solution;
 import OOP.Provided.OOPResult;
 import java.util.*;
 
-public class OOPTestSummery {
+public class OOPTestSummary {
     private Map<String,OOPResult> methodSumMap;
 
-    public OOPTestSummery(Map<String,OOPResult> testMap){
+    public OOPTestSummary(Map<String,OOPResult> testMap){
         if(testMap != null){
             methodSumMap = new TreeMap<>();
             methodSumMap.putAll(testMap);
