@@ -1,6 +1,7 @@
 package OOP.Solution;
 
 import OOP.Provided.OOPAssertionFailure;
+import OOP.Provided.OOPExceptionMismatchError;
 import OOP.Provided.OOPExpectedException;
 import OOP.Provided.OOPResult;
 
@@ -362,43 +363,27 @@ V         * Do the same for OOPAfter
                 expected_exception.expect(null);
                 expected_exception.expectMessage(null);
                 m.invoke(test_instance);
-            } catch (/*expected exception*/) {
-                exception_flag = true;
-                /*
-                TODO:
-                exeption flag = true
-                if message is the expected message
-                    OOResultImpl variable with:
-                        SUCCESS
-                        message is: null
-                else
-                     OOResultImpl variable with:
-                        EXPECTED_EXCEPTION_MISMATCH
-                        message is: OOPExceptionMismatch.getMessage()
-                 */
-            } catch (OOPAssertionFailure e) {
-                exception_flag=true;
 
-                /*
-                TODO:
-                OOResultImpl variable with:
-                    FAILURE
-                    message is: OOPAssertionFailure.getMessage
-                 */
-            } catch (Throwable e) {
+            }  catch (OOPAssertionFailure e) {
                 exception_flag=true;
-                /*
-                TODO:
-                exeption flag = true
-                    e != null
-                        OOResultImpl variable with:
-                            EXPECTED_EXCEPTION_MISMATCH
-                            message is: e.getMessage
-                    else
-                        OOResultImpl variable with:
-                            ERROR
-                            message is: e.class.name
-                 */
+                test_summery.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.FAILURE,e.getMessage()));
+            }
+            catch (Exception e ) {
+                exception_flag = true;
+                if(e.getClass().equals(expected_exception.getExpectedException())) {
+                    if (expected_exception.assertExpected(e)) {
+                        test_summery.put(m.getName(), new OOPResultImpl(OOPResult.OOPTestResult.SUCCESS, null));
+                    }
+                    else{
+                        test_summery.put(m.getName(),new OOPResultImpl(
+                                OOPResult.OOPTestResult.EXPECTED_EXCEPTION_MISMATCH,
+                                new OOPExceptionMismatchError(expected_exception.getExpectedException(),
+                                        e.getClass()).getMessage()));
+                    }
+                }
+                if(expected_exception==null){
+                    test_summery.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.ERROR,e.getClass().getName()));
+                }
             }
             if(expected_exception != null && !exception_flag){
                test_summery.put(m.getName(),
