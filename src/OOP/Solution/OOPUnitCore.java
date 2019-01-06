@@ -352,7 +352,9 @@ V         * Do the same for OOPAfter
                 continue;
             }
             try {
-                //TODO: put null into expectedException - so that we know it was changed within this test
+                //put null into expectedException - so that we know it was changed within this test
+                expected_exception.expect(null);
+                expected_exception.expectMessage(null);
                 m.invoke(test_instance);
             } catch (/*expected exception*/) {
                 /*
