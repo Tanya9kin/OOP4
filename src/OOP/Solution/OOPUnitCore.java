@@ -18,6 +18,7 @@ public class OOPUnitCore {
     private Map<String,List<Method>> all_after;
     private Object[] back_up;
     private Map <String,OOPResult> test_summery;
+    private OOPExpectedException expected_exception;
     /*
     #1 Q: why static?
     A:
@@ -197,14 +198,14 @@ V         * Do the same for OOPAfter
             f.setAccessible(true);
             Object current_field = f.get(test_instance); //f can be null - and this will not work - just put null into the backup
             try {
-                //TODO:clonable isAssignableFrom class ==> tells if this class can invoke clone
-                //TODO:we need to get the method defined either in this class or in one of its daddys
+                //note maybe:clonable isAssignableFrom class ==> tells if this class can invoke clone
+                //note maybe: we need to get the method defined either in this class or in one of its daddys
                 Method f_clone = current_field.getClass().getMethod("clone"); //if method is private this will not work
                 f_clone.setAccessible(true);
                 back_up[i] = f_clone.invoke(current_field);
             } catch (NoSuchMethodException clone){
                 try {
-                    //TODO:the copy constructor may be in the daddys - and if so, this code wont find it - need to implement
+                    //note:the copy constructor may be in the daddys - and if so, this code wont find it - need to implement
                     Constructor f_copy_ctr = current_field.getClass().getDeclaredConstructor(f.getClass());
                     f_copy_ctr.setAccessible(true);
                     back_up[i] = f_copy_ctr.newInstance(current_field);
@@ -356,6 +357,7 @@ V         * Do the same for OOPAfter
             k.invoke(test_instance);
         }
     }
+
     //maybe write a function that gets all of the methods with annotation "***"
     //if we need it ordered we can make it so on demand
     public OOPTestSummery runClass(Class<?> testClass)
@@ -385,12 +387,16 @@ V         * Do the same for OOPAfter
                     collect(Collectors.toList());
         }
         test_summery = new TreeMap<>();
-        if(Arrays.asList(test_summery.getClass().getDeclaredFields()).contains(OOPExpectedException.class)){
+
+        if(Arrays.stream(test_instance.getClass().getDeclaredFields()).anyMatch(f-> f.getAnnotation(OOPExceptionRule.class)!= null))
+        {
             /*
             TODO: get the field that is of type OOPExpectedException and save reference into variable for future use
                 important note:
                 we need the field from test_instance itself and not just from it's class
              */
+            Object[] expected_temp_array  = Arrays.stream(test_instance.getClass().getDeclaredFields()).filter(f-> f.getAnnotation(OOPExceptionRule.class)!= null).toArray();
+            expected_exception = (OOPExpectedException) expected_temp_array[0];
         }
         for(Method m : tests){
             //TODO: define variable flag for knowing if there was an exepction = false
