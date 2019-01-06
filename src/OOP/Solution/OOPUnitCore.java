@@ -321,6 +321,7 @@ V         * Do the same for OOPAfter
         if(tag==null || testClass==null   ||  !testClass.isAnnotationPresent(OOPTestClass.class)){
             throw new IllegalArgumentException();
         }
+        boolean exception_flag = false;
         testClass.getConstructor().setAccessible(true);
         test_instance = testClass.getConstructor().newInstance();
         setup();
@@ -341,8 +342,11 @@ V         * Do the same for OOPAfter
              */
             //Object[] expected_temp_array  = Arrays.stream(test_instance.getClass().getDeclaredFields()).filter(f-> f.getAnnotation(OOPExceptionRule.class)!= null).toArray();
             //expected_exception = (OOPExpectedException) expected_temp_array[0];
+            Field f = Arrays.stream(test_instance.getClass().getDeclaredFields()).
+                    filter(p-> p.isAnnotationPresent(OOPExceptionRule.class)).collect(Collectors.toList()).get(0);
+            f.setAccessible(true);
+            expected_exception = (OOPExpectedExceptionImpl)f.get(test_instance);
 
-            expected_exception.setAccessible();
         }
         for(Method m : tests){
             //TODO: define variable flag for knowing if there was an exepction = false
@@ -359,6 +363,7 @@ V         * Do the same for OOPAfter
                 expected_exception.expectMessage(null);
                 m.invoke(test_instance);
             } catch (/*expected exception*/) {
+                exception_flag = true;
                 /*
                 TODO:
                 exeption flag = true
@@ -372,14 +377,16 @@ V         * Do the same for OOPAfter
                         message is: OOPExceptionMismatch.getMessage()
                  */
             } catch (OOPAssertionFailure e) {
+                exception_flag=true;
+
                 /*
                 TODO:
-                exeption flag = true
                 OOResultImpl variable with:
                     FAILURE
                     message is: OOPAssertionFailure.getMessage
                  */
             } catch (Throwable e) {
+                exception_flag=true;
                 /*
                 TODO:
                 exeption flag = true
@@ -393,17 +400,13 @@ V         * Do the same for OOPAfter
                             message is: e.class.name
                  */
             }
-            /*
-            TODO:
-                if expectedException not null but no exception caugth (exeption flag = false)
-                    OOResultImpl variable with:
-                        ERROR
-                        message is: the class of the expected exception
-                if expectedException null and not exception caught (exception flag = false)
-                    OOResultImpl variable with:
-                        SUCCESS
-                        message is: null
-             */
+            if(expected_exception != null && !exception_flag){
+               test_summery.put(m.getName(),
+                       new OOPResultImpl(OOPResult.OOPTestResult.ERROR,expected_exception.getClass().getName()));
+            }
+            else if(expected_exception.getExpectedException()==null && !exception_flag){
+                test_summery.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.SUCCESS,null));
+            }
             try {
                 invokeMethods(m,all_after);
             } catch (Throwable e){
