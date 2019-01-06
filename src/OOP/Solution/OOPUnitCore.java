@@ -339,8 +339,10 @@ V         * Do the same for OOPAfter
                 important note:
                 we need the field from test_instance itself and not just from it's class
              */
-            Object[] expected_temp_array  = Arrays.stream(test_instance.getClass().getDeclaredFields()).filter(f-> f.getAnnotation(OOPExceptionRule.class)!= null).toArray();
-            expected_exception = (OOPExpectedException) expected_temp_array[0];
+            //Object[] expected_temp_array  = Arrays.stream(test_instance.getClass().getDeclaredFields()).filter(f-> f.getAnnotation(OOPExceptionRule.class)!= null).toArray();
+            //expected_exception = (OOPExpectedException) expected_temp_array[0];
+
+            expected_exception.setAccessible();
         }
         for(Method m : tests){
             //TODO: define variable flag for knowing if there was an exepction = false
