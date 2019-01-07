@@ -11,21 +11,23 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class OOPUnitCore {
-    private Object test_instance; //Bring Object Oriented brograming (arab) stuff
-    private List<Method> tests;
-    private List<Method> before;
-    private List<Method> after;
-    private Map<String,List<Method>> all_before;
-    private Map<String,List<Method>> all_after;
-    private Object[] back_up;
-    private Map <String,OOPResult> test_summery;
-    private OOPExpectedException expected_exception;
+    private static Object test_instance; //Bring Object Oriented brograming (arab) stuff
+    private static List<Method> tests;
+    private static List<Method> before;
+    private static List<Method> after;
+    private static Map<String,List<Method>> all_before;
+    private static Map<String,List<Method>> all_after;
+    private static Object[] back_up;
+    private static Map <String,OOPResult> test_summary;
+    private static OOPExpectedException expected_exception;
+
     /*
     #1 Q: why static?
     A:
 
     #2 Q:what if the two objects are null? is it true?
     A:
+
 
     This method checks if the two objects are equal value-wise
     LOGIC:
@@ -43,7 +45,7 @@ public class OOPUnitCore {
     /*
     Used to fail a test by throwing OOPAssertionFailure
      */
-    public void fail() throws OOPAssertionFailure {
+    public static void fail() throws OOPAssertionFailure {
         throw new OOPAssertionFailure();
     }
 
@@ -164,7 +166,18 @@ V         * Do the same for OOPAfter
         #6Q: is it ok to declare List<Method>?
         A: I think so
      */
-    private void getAnnotated(Class<?> testClass, List<Method> methods, Class<? extends  Annotation> annot){
+    private static void exit(){
+        tests=null;
+        before=null;
+        after=null;
+        all_before=null;
+        all_after=null;
+        back_up=null;
+        test_summary=null;
+        expected_exception=null;
+        test_instance=null;
+    }
+    private static void getAnnotated(Class<?> testClass, List<Method> methods, Class<? extends  Annotation> annot){
             if(testClass==null){
                 return;
             }
@@ -181,7 +194,7 @@ V         * Do the same for OOPAfter
             2.if the object has copy constructor use it
             3.otherwise save the actual object
      */
-    private void backup() throws InvocationTargetException, IllegalAccessException, InstantiationException {
+    private static void backup() throws InvocationTargetException, IllegalAccessException, InstantiationException {
         back_up = new Object[test_instance.getClass().getDeclaredFields().length];
         int i=0;
         for(Field f : test_instance.getClass().getDeclaredFields()){
@@ -212,11 +225,13 @@ V         * Do the same for OOPAfter
     /*
     Restore the values of the fields in the test object
      */
-    private void restore() throws IllegalAccessException{
+    private static void restore() throws IllegalAccessException{
         int i=0;
         for(Field f : test_instance.getClass().getDeclaredFields()){
             f.setAccessible(true);
-            f.set(back_up[i++].getClass(),back_up[i++]);
+            f.set(test_instance,back_up[i]);
+            i++;
+
         }
     }
 
@@ -228,7 +243,7 @@ V         * Do the same for OOPAfter
      * reverse list and get the same ordered from father to son
      * run all by order
      */
-    private void setup()
+    private static void setup()
             throws IllegalAccessException,InvocationTargetException{
         List<Method> methods = new ArrayList<Method>();
         getAnnotated(test_instance.getClass(),methods,OOPSetup.class);
@@ -243,7 +258,7 @@ V         * Do the same for OOPAfter
     /*
     makes all the resources for runTest.
      */
-    private void getAllTests(boolean tagFlag,String tag) throws IllegalAccessException,InvocationTargetException{
+    private static void getAllTests(boolean tagFlag,String tag) throws IllegalAccessException,InvocationTargetException{
       tests = new ArrayList<>(); //list of all methods annotated @OOPtest going up the inheritance
       before = new ArrayList<>(); //list of all methods annotated @OOPBefore going up the inheritance
       after = new ArrayList<>(); //list of all methods annotated @OOPAfter going up the inheritance
@@ -274,7 +289,7 @@ V         * Do the same for OOPAfter
     Makes a map in which the key is a test method and value is list of methods that
     need to be run before the test method
      */
-    private void setBeforeMap(){
+    private static void setBeforeMap(){
         for(Method m : tests){
             for(Method k : before){
                 if(Arrays.asList(k.getAnnotation(OOPBefore.class).value()).contains(m.getName()))
@@ -287,7 +302,7 @@ V         * Do the same for OOPAfter
     Makes a map in which the key is a test method and value is list of methods that
     need to be run after the test method
      */
-    private void setAfterMap(){
+    private static void setAfterMap(){
         for(Method m : tests){
             for(Method k : after){
                 if(Arrays.asList(k.getAnnotation(OOPBefore.class).value()).contains(m.getName()))
@@ -296,7 +311,7 @@ V         * Do the same for OOPAfter
         }
     }
 
-    private void invokeMethods(Method m, Map<String,List<Method>> map) throws IllegalAccessException, InvocationTargetException, InstantiationException {
+    private static void invokeMethods(Method m, Map<String,List<Method>> map) throws IllegalAccessException, InvocationTargetException, InstantiationException {
         for(Method k : map.get(m.getName())){
             backup();
             k.invoke(test_instance);
@@ -305,34 +320,41 @@ V         * Do the same for OOPAfter
 
     //maybe write a function that gets all of the methods with annotation "***"
     //if we need it ordered we can make it so on demand
-    public OOPTestSummary runClass(Class<?> testClass)
-            throws InstantiationException,InvocationTargetException,IllegalAccessException,NoSuchMethodException{
-
-        return runClassAux(testClass,false,"");
+    public static OOPTestSummary runClass(Class<?> testClass)
+            throws IllegalArgumentException{
+        OOPTestSummary result = runClassAux(testClass,false,"");
+        exit();
+        return result;
     }
 
-    public OOPTestSummary runClass(Class<?> testClass, String tag)
-            throws InstantiationException,InvocationTargetException,IllegalAccessException,NoSuchMethodException{
-       return runClassAux(testClass,true,tag);
+    public static OOPTestSummary runClass(Class<?> testClass, String tag)
+            throws IllegalArgumentException{
+        OOPTestSummary result = runClassAux(testClass,true,tag);
+        exit();
+        return result;
     }
 
     //WRITE ONLY THIS ONE WITH THE WHOLE DAMN LOGIC
-     private OOPTestSummary runClassAux(Class<?> testClass, boolean tagFlag, String tag)
-             throws InstantiationException,InvocationTargetException,IllegalAccessException,NoSuchMethodException,IllegalArgumentException{
+     private static OOPTestSummary runClassAux(Class<?> testClass, boolean tagFlag, String tag)
+             throws IllegalArgumentException{
         if(tag==null || testClass==null   ||  !testClass.isAnnotationPresent(OOPTestClass.class)){
             throw new IllegalArgumentException();
+
         }
-        boolean exception_flag = false;
-        testClass.getConstructor().setAccessible(true);
-        test_instance = testClass.getConstructor().newInstance();
-        setup();
-        getAllTests(tagFlag,tag);
+         boolean exception_flag = false;
+        try {
+
+             testClass.getConstructor().setAccessible(true);
+             test_instance = testClass.getConstructor().newInstance();
+             setup();
+             getAllTests(tagFlag, tag);
+         } catch(Exception e) {}
         if(testClass.getAnnotation(OOPTestClass.class).value().equals(OOPTestClass.OOPTestClassType.ORDERED)){
             tests = tests.stream().
                     sorted((k1,k2)-> k1.getAnnotation(OOPTest.class).order() - k2.getAnnotation(OOPTest.class).order()).
                     collect(Collectors.toList());
         }
-        test_summery = new TreeMap<>();
+        test_summary = new TreeMap<>();
 
         if(Arrays.stream(test_instance.getClass().getDeclaredFields()).anyMatch(f-> f.getAnnotation(OOPExceptionRule.class)!= null))
         {
@@ -346,7 +368,9 @@ V         * Do the same for OOPAfter
             Field f = Arrays.stream(test_instance.getClass().getDeclaredFields()).
                     filter(p-> p.isAnnotationPresent(OOPExceptionRule.class)).collect(Collectors.toList()).get(0);
             f.setAccessible(true);
-            expected_exception = (OOPExpectedExceptionImpl)f.get(test_instance);
+            try {
+                expected_exception = (OOPExpectedExceptionImpl) f.get(test_instance);
+            } catch(Exception e){}
 
         }
         for(Method m : tests){
@@ -354,56 +378,73 @@ V         * Do the same for OOPAfter
             try {
                 invokeMethods(m,all_before);
             } catch (Throwable e){
-                restore();
-                test_summery.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.ERROR, e.getClass().getName()));
+                try {
+                    restore();
+                } catch(Exception ex){}
+                test_summary.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.ERROR, e.getClass().getName()));
                 continue;
             }
             try {
                 //put null into expectedException - so that we know it was changed within this test
-                expected_exception.expect(null);
-                expected_exception.expectMessage(null);
+                if(expected_exception!=null) expected_exception.expect(null).expectMessage(null);
                 m.invoke(test_instance);
 
-            }  catch (OOPAssertionFailure e) {
+            }  catch (InvocationTargetException e) {
                 exception_flag=true;
-                test_summery.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.FAILURE,e.getMessage()));
+                if(e.getTargetException().getClass().equals(OOPAssertionFailure.class)) {
+                    test_summary.put(m.getName(), new OOPResultImpl(OOPResult.OOPTestResult.FAILURE,
+                            e.getTargetException().getMessage()));
+                    try {
+                        restore();
+                    } catch(Exception pf){}
+                }
+                if(expected_exception!=null && e.getTargetException().getClass().equals(expected_exception.getExpectedException())) {
+                    if (expected_exception.assertExpected((Exception)e.getTargetException())) {
+                        test_summary.put(m.getName(), new OOPResultImpl(OOPResult.OOPTestResult.SUCCESS, null));
+                    }
+                    else{
+                        test_summary.put(m.getName(),new OOPResultImpl(
+                                OOPResult.OOPTestResult.EXPECTED_EXCEPTION_MISMATCH,
+                                new OOPExceptionMismatchError(expected_exception.getExpectedException(),
+                                        (Class<? extends Exception>)e.getTargetException().getClass()).getMessage()));
+                    }
+                }
             }
             catch (Exception e ) {
                 exception_flag = true;
-                if(e.getClass().equals(expected_exception.getExpectedException())) {
-                    if (expected_exception.assertExpected(e)) {
-                        test_summery.put(m.getName(), new OOPResultImpl(OOPResult.OOPTestResult.SUCCESS, null));
-                    }
-                    else{
-                        test_summery.put(m.getName(),new OOPResultImpl(
-                                OOPResult.OOPTestResult.EXPECTED_EXCEPTION_MISMATCH,
-                                new OOPExceptionMismatchError(expected_exception.getExpectedException(),
-                                        e.getClass()).getMessage()));
-                    }
-                }
+
                 if(expected_exception==null){
-                    test_summery.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.ERROR,e.getClass().getName()));
+                    test_summary.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.ERROR,e.getClass().getName()));
+                    try{
+                        restore();
+                    } catch(Exception ex){}
                 }
-            }
-            if(expected_exception != null && !exception_flag){
-               test_summery.put(m.getName(),
-                       new OOPResultImpl(OOPResult.OOPTestResult.ERROR,expected_exception.getClass().getName()));
-            }
-            else if(expected_exception.getExpectedException()==null && !exception_flag){
-                test_summery.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.SUCCESS,null));
             }
             try {
+                if (expected_exception!= null && expected_exception.getExpectedException() != null && !exception_flag) {
+                    test_summary.put(m.getName(),
+                            new OOPResultImpl(OOPResult.OOPTestResult.ERROR, expected_exception.getClass().getName()));
+                    restore();
+                }
+                else if(expected_exception==null && !exception_flag){
+                    test_summary.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.SUCCESS,null));
+                }
+            } catch(Exception ex){}
+
+           try{
                 invokeMethods(m,all_after);
-            } catch (Throwable e){
-                restore();
+            } catch (Exception e){
+                try {
+                    restore();
+                    test_summary.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.ERROR, e.getClass().getName()));
+                } catch(Exception ex){}
                 /*
                 NOTE: we are fine with the fact that here we might override what we put
                     during the test, because if this fails, the test fails
                 */
-                test_summery.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.ERROR, e.getClass().getName()));
-                continue;
             }
         }
-     return new OOPTestSummary(test_summery);
+
+     return new OOPTestSummary(test_summary);
     }
 }

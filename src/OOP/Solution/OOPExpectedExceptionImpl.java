@@ -19,7 +19,7 @@ public class OOPExpectedExceptionImpl implements OOPExpectedException{
 
     @Override
     public OOPExpectedException expect(Class<? extends Exception> expected) {
-        if(expected != null)
+        //if(expected != null) WAS NOT SET%TING NULL BOY
             exp_exception = expected;
         return this;
     }
@@ -27,8 +27,8 @@ public class OOPExpectedExceptionImpl implements OOPExpectedException{
     //"Can expect several messages" --> this is why I concatenated it and not just changed the string
     @Override
     public OOPExpectedException expectMessage(String msg) {
-        if(msg != null)
-            message = message.concat(msg); // WWW says it works fine (implicitly makes a new string)
+        //if(msg != null) WAS NOT SETTING NULL
+            message = msg; // WWW says it works fine (implicitly makes a new string)
         return this;
     }
 
@@ -43,8 +43,14 @@ public class OOPExpectedExceptionImpl implements OOPExpectedException{
             return exp_exception == null;
         }
         try{
-            if(exp_exception.isAssignableFrom(e.getClass()) && message.contains(e.getMessage()))
-                return true;
+            String test = e.getMessage();
+            if(exp_exception.isAssignableFrom(e.getClass())){
+
+                if(e.getMessage()==null && message==null)
+                    return true;
+                if(e.getMessage()!= null && e.getMessage().contains(message))
+                    return true;
+            }
         } catch (NullPointerException nullDereference) {
             return message == null;
         }
