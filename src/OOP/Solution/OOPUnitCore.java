@@ -77,7 +77,7 @@ V         * In another function:
 V         * Do the same for OOPAfter
             map<testMethod,List of OOPAfter methods> :
 
-         * Make an OOPTestSummary object.
+V         * Make an OOPTestSummary object.
 
             SUCCESS -
                 * there was no exception thrown or
@@ -105,15 +105,15 @@ V         * Do the same for OOPAfter
     AND THAT IS WHY LOGIC:
 
         * for each method in tests:
-            *for each OOPBefore method in all_tests for this method:
+V            *for each OOPBefore method in all_tests for this method:
                 Backup fields
                 run method in try catch
                 if the method throws an exception
                     restore fields
                     add OOPTestResult.ERROR for this test method
                     the message will be the name of the Exception class
-                    on to the next test
-            *run method in try catch block: (some reference shit here:)
+                    continue to the next test
+V            *run method in try catch block:
         * if there is a field with annotation @OOPExceptionRule save it in variable
         check that it is non static and has a return value for expect other than null
 
@@ -231,7 +231,6 @@ V         * Do the same for OOPAfter
             f.setAccessible(true);
             f.set(test_instance,back_up[i]);
             i++;
-
         }
     }
 
@@ -314,6 +313,7 @@ V         * Do the same for OOPAfter
     private static void invokeMethods(Method m, Map<String,List<Method>> map) throws IllegalAccessException, InvocationTargetException, InstantiationException {
         for(Method k : map.get(m.getName())){
             backup();
+            //TODO: note - what if this throws something else? maybe try-catch?
             k.invoke(test_instance);
         }
     }
@@ -341,9 +341,8 @@ V         * Do the same for OOPAfter
             throw new IllegalArgumentException();
 
         }
-         boolean exception_flag = false;
+        boolean exception_flag;
         try {
-
              testClass.getConstructor().setAccessible(true);
              test_instance = testClass.getConstructor().newInstance();
              setup();
@@ -356,25 +355,21 @@ V         * Do the same for OOPAfter
         }
         test_summary = new TreeMap<>();
 
+        expected_exception = null;
+        //if there exists an expected exception we put it into expected_exception
         if(Arrays.stream(test_instance.getClass().getDeclaredFields()).anyMatch(f-> f.getAnnotation(OOPExceptionRule.class)!= null))
         {
-            /*
-            TODO: get the field that is of type OOPExpectedException and save reference into variable for future use
-                important note:
-                we need the field from test_instance itself and not just from it's class
-             */
-            //Object[] expected_temp_array  = Arrays.stream(test_instance.getClass().getDeclaredFields()).filter(f-> f.getAnnotation(OOPExceptionRule.class)!= null).toArray();
-            //expected_exception = (OOPExpectedException) expected_temp_array[0];
             Field f = Arrays.stream(test_instance.getClass().getDeclaredFields()).
                     filter(p-> p.isAnnotationPresent(OOPExceptionRule.class)).collect(Collectors.toList()).get(0);
+
             f.setAccessible(true);
             try {
                 expected_exception = (OOPExpectedExceptionImpl) f.get(test_instance);
             } catch(Exception e){}
-
         }
+
         for(Method m : tests){
-            //TODO: define variable flag for knowing if there was an exepction = false
+            exception_flag = false;
             try {
                 invokeMethods(m,all_before);
             } catch (Throwable e){
@@ -385,63 +380,72 @@ V         * Do the same for OOPAfter
                 continue;
             }
             try {
-                //put null into expectedException - so that we know it was changed within this test
-                if(expected_exception!=null) expected_exception.expect(null).expectMessage(null);
+                if(expected_exception != null) {
+                    expected_exception.expect(null);
+                    expected_exception.expectMessage(null);
+                }
                 m.invoke(test_instance);
 
             }  catch (InvocationTargetException e) {
-                exception_flag=true;
+                exception_flag = true;
+                //got an OOPAssertionFailure
                 if(e.getTargetException().getClass().equals(OOPAssertionFailure.class)) {
                     test_summary.put(m.getName(), new OOPResultImpl(OOPResult.OOPTestResult.FAILURE,
                             e.getTargetException().getMessage()));
+                    /*
                     try {
                         restore();
                     } catch(Exception pf){}
+                    */
                 }
-                if(expected_exception!=null && e.getTargetException().getClass().equals(expected_exception.getExpectedException())) {
+                //got the exception and the message we were expecting
+                if(expected_exception != null && e.getTargetException().getClass().equals(expected_exception.getExpectedException())) {
                     if (expected_exception.assertExpected((Exception)e.getTargetException())) {
                         test_summary.put(m.getName(), new OOPResultImpl(OOPResult.OOPTestResult.SUCCESS, null));
                     }
                     else{
+                        //got the exception we were expecting but wrong message
                         test_summary.put(m.getName(),new OOPResultImpl(
                                 OOPResult.OOPTestResult.EXPECTED_EXCEPTION_MISMATCH,
                                 new OOPExceptionMismatchError(expected_exception.getExpectedException(),
                                         (Class<? extends Exception>)e.getTargetException().getClass()).getMessage()));
                     }
                 }
-            }
-            catch (Exception e ) {
+            } catch (Exception e ) {
                 exception_flag = true;
 
-                if(expected_exception==null){
+                //got an exception but did not anticipate one
+                if(expected_exception == null){
                     test_summary.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.ERROR,e.getClass().getName()));
+                    /*
                     try{
                         restore();
                     } catch(Exception ex){}
+                    */
                 }
             }
-            try {
-                if (expected_exception!= null && expected_exception.getExpectedException() != null && !exception_flag) {
+            //try {
+            //didn't get an exception but expected one
+                if (expected_exception != null && expected_exception.getExpectedException() != null && !exception_flag) {
                     test_summary.put(m.getName(),
-                            new OOPResultImpl(OOPResult.OOPTestResult.ERROR, expected_exception.getClass().getName()));
-                    restore();
+                            new OOPResultImpl(OOPResult.OOPTestResult.ERROR, expected_exception.getExpectedException().getClass().getName()));
+                    //restore();
                 }
-                else if(expected_exception==null && !exception_flag){
+                //didn't get an exception and didn't expect one
+                //or didnt' even have an expected exception field
+                else if(expected_exception == null || (expected_exception != null && expected_exception.getExpectedException() == null && !exception_flag)){
                     test_summary.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.SUCCESS,null));
                 }
-            } catch(Exception ex){}
+            //} catch(Exception ex){}
 
-           try{
+            try {
                 invokeMethods(m,all_after);
-            } catch (Exception e){
+            } catch (Throwable e){
                 try {
                     restore();
-                    test_summary.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.ERROR, e.getClass().getName()));
                 } catch(Exception ex){}
-                /*
-                NOTE: we are fine with the fact that here we might override what we put
-                    during the test, because if this fails, the test fails
-                */
+                test_summary.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.ERROR, e.getClass().getName()));
+                continue;
             }
         }
 
