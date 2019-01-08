@@ -40,7 +40,7 @@ public class OOPExpectedExceptionImpl implements OOPExpectedException{
     @Override
     public boolean assertExpected(Exception e) {
         if(e == null){
-            return exp_exception == null;
+            return (exp_exception == null);
         }
         try{
             String test = e.getMessage();

@@ -321,14 +321,14 @@ V            *run method in try catch block:
     //maybe write a function that gets all of the methods with annotation "***"
     //if we need it ordered we can make it so on demand
     public static OOPTestSummary runClass(Class<?> testClass)
-            throws IllegalArgumentException{
+            throws IllegalArgumentException {
         OOPTestSummary result = runClassAux(testClass,false,"");
         exit();
         return result;
     }
 
     public static OOPTestSummary runClass(Class<?> testClass, String tag)
-            throws IllegalArgumentException{
+            throws IllegalArgumentException {
         OOPTestSummary result = runClassAux(testClass,true,tag);
         exit();
         return result;
@@ -336,37 +336,45 @@ V            *run method in try catch block:
 
     //WRITE ONLY THIS ONE WITH THE WHOLE DAMN LOGIC
      private static OOPTestSummary runClassAux(Class<?> testClass, boolean tagFlag, String tag)
-             throws IllegalArgumentException{
+             throws IllegalArgumentException {
         if(tag==null || testClass==null   ||  !testClass.isAnnotationPresent(OOPTestClass.class)){
             throw new IllegalArgumentException();
 
         }
         boolean exception_flag;
         try {
-             testClass.getConstructor().setAccessible(true);
-             test_instance = testClass.getConstructor().newInstance();
+             testClass.getDeclaredConstructor().setAccessible(true);
+             test_instance = testClass.getDeclaredConstructor().newInstance();
              setup();
              getAllTests(tagFlag, tag);
-         } catch(Exception e) {}
+         } catch(Exception e) {
+            if(e.equals(NullPointerException.class)) System.out.println(testClass.getName() + "nullpointer");
+            System.out.println(testClass.getName() + "\n" + e.getClass().getName() + "\nGood Morning Nimrod :)\nWe have a problem here, it's line 352");
+            //TODO: fix this. it seems that if the constructor is private we are not getting it and not making an instance.
+        }
         if(testClass.getAnnotation(OOPTestClass.class).value().equals(OOPTestClass.OOPTestClassType.ORDERED)){
             tests = tests.stream().
                     sorted((k1,k2)-> k1.getAnnotation(OOPTest.class).order() - k2.getAnnotation(OOPTest.class).order()).
                     collect(Collectors.toList());
         }
-        test_summary = new TreeMap<>();
 
+        test_summary = new TreeMap<>();
         expected_exception = null;
         //if there exists an expected exception we put it into expected_exception
-        if(Arrays.stream(test_instance.getClass().getDeclaredFields()).anyMatch(f-> f.getAnnotation(OOPExceptionRule.class)!= null))
-        {
+         if(test_instance.getClass().getDeclaredFields() != null) {
+
+         if(Arrays.stream(test_instance.getClass().getDeclaredFields()).anyMatch(f-> f.getAnnotation(OOPExceptionRule.class)!= null)) {
             Field f = Arrays.stream(test_instance.getClass().getDeclaredFields()).
                     filter(p-> p.isAnnotationPresent(OOPExceptionRule.class)).collect(Collectors.toList()).get(0);
 
             f.setAccessible(true);
             try {
                 expected_exception = (OOPExpectedExceptionImpl) f.get(test_instance);
-            } catch(Exception e){}
+            } catch(Exception e){
+                //TODO: something - i mean - what if it actually throws?
+            }
         }
+         }
 
         for(Method m : tests){
             exception_flag = false;
