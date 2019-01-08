@@ -37,7 +37,10 @@ public class OOPUnitCore {
           assertionFailure
      */
     public static void assertEquals(Object expected, Object actual){
-        if(!expected.equals(actual)){
+        if(expected==null && actual==null){
+            return;
+        }
+        if(expected == null || !expected.equals(actual)){
             throw new OOPAssertionFailure();
         }
     }
@@ -183,7 +186,7 @@ V            *run method in try catch block:
             }
 
             methods.addAll(Arrays.stream(testClass.getDeclaredMethods()).
-                    filter(m-> !methods.contains(m)&& m.isAnnotationPresent(annot)).collect(Collectors.toList()));
+                    filter(m-> methods.stream().noneMatch(p-> p.getName().equals(m.getName()))&& m.isAnnotationPresent(annot)).collect(Collectors.toList()));
             getAnnotated(testClass.getSuperclass(),methods,annot);
     }
 
@@ -292,7 +295,9 @@ V            *run method in try catch block:
         for(Method m : tests){
             for(Method k : before){
                 if(Arrays.asList(k.getAnnotation(OOPBefore.class).value()).contains(m.getName()))
-                    all_before.get(m.getName()).add(k);
+                    if(all_before.get(m.getName()).stream().noneMatch(p-> p.getName().equals(k.getName()))) {
+                        all_before.get(m.getName()).add(k);
+                    }
             }
         }
     }
@@ -304,8 +309,11 @@ V            *run method in try catch block:
     private static void setAfterMap(){
         for(Method m : tests){
             for(Method k : after){
-                if(Arrays.asList(k.getAnnotation(OOPBefore.class).value()).contains(m.getName()))
-                    all_after.get(m.getName()).add(k);
+                if(Arrays.asList(k.getAnnotation(OOPAfter.class).value()).contains(m.getName()))
+                    if(all_after.get(m.getName()).stream().noneMatch(p-> p.getName().equals(k.getName()))){
+                        all_after.get(m.getName()).add(k);
+                    }
+
             }
         }
     }
@@ -313,7 +321,7 @@ V            *run method in try catch block:
     private static void invokeMethods(Method m, Map<String,List<Method>> map) throws IllegalAccessException, InvocationTargetException, InstantiationException {
         for(Method k : map.get(m.getName())){
             backup();
-            //TODO: note - what if this throws something else? maybe try-catch?
+            k.setAccessible(true);
             k.invoke(test_instance);
         }
     }
@@ -343,8 +351,9 @@ V            *run method in try catch block:
         }
         boolean exception_flag;
         try {
-             testClass.getDeclaredConstructor().setAccessible(true);
-             test_instance = testClass.getDeclaredConstructor().newInstance();
+             Constructor cons = testClass.getDeclaredConstructor();
+             cons.setAccessible(true);
+             test_instance = cons.newInstance();
              setup();
              getAllTests(tagFlag, tag);
          } catch(Exception e) {
@@ -392,11 +401,15 @@ V            *run method in try catch block:
                     expected_exception.expect(null);
                     expected_exception.expectMessage(null);
                 }
+                m.setAccessible(true);
                 m.invoke(test_instance);
 
             }  catch (InvocationTargetException e) {
                 exception_flag = true;
                 //got an OOPAssertionFailure
+                if(expected_exception==null || expected_exception.getExpectedException()==null){
+                    test_summary.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.ERROR,e.getTargetException().getClass().getName()));
+                }
                 if(e.getTargetException().getClass().equals(OOPAssertionFailure.class)) {
                     test_summary.put(m.getName(), new OOPResultImpl(OOPResult.OOPTestResult.FAILURE,
                             e.getTargetException().getMessage()));
@@ -407,7 +420,7 @@ V            *run method in try catch block:
                     */
                 }
                 //got the exception and the message we were expecting
-                if(expected_exception != null && e.getTargetException().getClass().equals(expected_exception.getExpectedException())) {
+                if(expected_exception != null  && expected_exception.getExpectedException()!=null ) {
                     if (expected_exception.assertExpected((Exception)e.getTargetException())) {
                         test_summary.put(m.getName(), new OOPResultImpl(OOPResult.OOPTestResult.SUCCESS, null));
                     }
@@ -419,19 +432,12 @@ V            *run method in try catch block:
                                         (Class<? extends Exception>)e.getTargetException().getClass()).getMessage()));
                     }
                 }
-            } catch (Exception e ) {
-                exception_flag = true;
 
-                //got an exception but did not anticipate one
-                if(expected_exception == null){
-                    test_summary.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.ERROR,e.getClass().getName()));
-                    /*
-                    try{
-                        restore();
-                    } catch(Exception ex){}
-                    */
-                }
+            } catch (Exception e){
+
             }
+
+
             //try {
             //didn't get an exception but expected one
                 if (expected_exception != null && expected_exception.getExpectedException() != null && !exception_flag) {
@@ -439,9 +445,10 @@ V            *run method in try catch block:
                             new OOPResultImpl(OOPResult.OOPTestResult.ERROR, expected_exception.getExpectedException().getClass().getName()));
                     //restore();
                 }
+
                 //didn't get an exception and didn't expect one
                 //or didnt' even have an expected exception field
-                else if(expected_exception == null || (expected_exception != null && expected_exception.getExpectedException() == null && !exception_flag)){
+                else if((expected_exception == null ||  expected_exception.getExpectedException() == null) && !exception_flag){
                     test_summary.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.SUCCESS,null));
                 }
             //} catch(Exception ex){}
@@ -453,7 +460,6 @@ V            *run method in try catch block:
                     restore();
                 } catch(Exception ex){}
                 test_summary.put(m.getName(),new OOPResultImpl(OOPResult.OOPTestResult.ERROR, e.getClass().getName()));
-                continue;
             }
         }
 

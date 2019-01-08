@@ -27,7 +27,7 @@ public class OOPResultImpl implements OOPResult {
             return false;
         }
         OOPResultImpl real_obj = (OOPResultImpl)obj;
-        if(real_obj.getResultType() == result_type && real_obj.getMessage().equals(message)){
+        if(real_obj.getResultType() == result_type && ((real_obj.getMessage()!=null && real_obj.getMessage().equals(message)) || real_obj.getMessage()==null &&message==null)){
             return true;
         }
         return false;
